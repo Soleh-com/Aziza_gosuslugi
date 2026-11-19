@@ -1,0 +1,6 @@
+{
+  "name": "ЕдиноеПособие CRM",
+  "description": "CRM-система для учёта клиентов по единому пособию, состава семьи и истории выплат.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

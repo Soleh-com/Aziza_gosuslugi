@@ -1,0 +1,209 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Reusable Security Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidChildItem(item) {
+      return item is map
+        && item.keys().hasAll(['name', 'birthDate'])
+        && item.keys().hasOnly(['name', 'birthDate'])
+        && item.name is string && item.name.size() <= 80
+        && item.birthDate is string && item.birthDate.size() <= 20;
+    }
+
+    function isValidChildrenList(children) {
+      return children is list
+        && children.size() <= 15
+        && (children.size() <= 0 || isValidChildItem(children[0]))
+        && (children.size() <= 1 || isValidChildItem(children[1]))
+        && (children.size() <= 2 || isValidChildItem(children[2]))
+        && (children.size() <= 3 || isValidChildItem(children[3]))
+        && (children.size() <= 4 || isValidChildItem(children[4]))
+        && (children.size() <= 5 || isValidChildItem(children[5]))
+        && (children.size() <= 6 || isValidChildItem(children[6]))
+        && (children.size() <= 7 || isValidChildItem(children[7]))
+        && (children.size() <= 8 || isValidChildItem(children[8]))
+        && (children.size() <= 9 || isValidChildItem(children[9]))
+        && (children.size() <= 10 || isValidChildItem(children[10]))
+        && (children.size() <= 11 || isValidChildItem(children[11]))
+        && (children.size() <= 12 || isValidChildItem(children[12]))
+        && (children.size() <= 13 || isValidChildItem(children[13]))
+        && (children.size() <= 14 || isValidChildItem(children[14]));
+    }
+
+    function isValidDocumentItem(item) {
+      return item is map
+        && item.keys().hasAll(['submitted', 'submittedDate'])
+        && item.keys().hasOnly(['submitted', 'submittedDate'])
+        && item.submitted is bool
+        && item.submittedDate is string && item.submittedDate.size() <= 20;
+    }
+
+    function isValidDocumentsChecklist(checklist) {
+      return checklist is map
+        && checklist.keys().hasAll(['application', 'passport', 'incomeCertificate'])
+        && checklist.keys().hasOnly(['application', 'passport', 'incomeCertificate'])
+        && isValidDocumentItem(checklist.application)
+        && isValidDocumentItem(checklist.passport)
+        && isValidDocumentItem(checklist.incomeCertificate);
+    }
+
+    function isValidClient(data) {
+      return data.keys().hasAll([
+          'ownerId', 'fullName', 'phone', 'snils', 'region',
+          'childrenCount', 'children', 'benefitPercent', 'monthlyAmount',
+          'status', 'firstBenefitDate', 'renewalDate', 'notes',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'fullName', 'phone', 'snils', 'region',
+          'childrenCount', 'children', 'benefitPercent', 'monthlyAmount',
+          'status', 'firstBenefitDate', 'renewalDate', 'notes',
+          'docsDueDate', 'documentsChecklist',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120
+        && data.phone is string && data.phone.size() <= 32
+        && data.snils is string && data.snils.size() <= 20
+        && data.region is string && data.region.size() <= 80
+        && data.childrenCount is int && data.childrenCount >= 0 && data.childrenCount <= 20
+        && isValidChildrenList(data.children)
+        && data.benefitPercent is int && data.benefitPercent in [0, 50, 75, 100]
+        && data.monthlyAmount is number && data.monthlyAmount >= 0 && data.monthlyAmount <= 1000000
+        && data.status is string && data.status in ['active', 'pending', 'renewal', 'denied', 'archived']
+        && data.firstBenefitDate is string && data.firstBenefitDate.size() <= 20
+        && data.renewalDate is string && data.renewalDate.size() <= 20
+        && data.notes is string && data.notes.size() <= 1000
+        && (!('docsDueDate' in data) || (data.docsDueDate is string && data.docsDueDate.size() <= 20))
+        && (!('documentsChecklist' in data) || isValidDocumentsChecklist(data.documentsChecklist))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPayout(data) {
+      return data.keys().hasAll([
+          'ownerId', 'clientId', 'clientName', 'amount',
+          'payoutDate', 'periodMonth', 'benefitPercent',
+          'childrenCovered', 'comment', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'clientId', 'clientName', 'amount',
+          'payoutDate', 'periodMonth', 'benefitPercent',
+          'childrenCovered', 'comment', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerId)
+        && data.ownerId == request.auth.uid
+        && isValidId(data.clientId)
+        && data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120
+        && data.amount is number && data.amount > 0 && data.amount <= 2000000
+        && data.payoutDate is string && data.payoutDate.size() == 10 && data.payoutDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.periodMonth is string && data.periodMonth.size() == 7 && data.periodMonth.matches('^\\d{4}-\\d{2}$')
+        && data.benefitPercent is int && data.benefitPercent in [50, 75, 100]
+        && data.childrenCovered is int && data.childrenCovered >= 0 && data.childrenCovered <= 20
+        && data.comment is string && data.comment.size() <= 300
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection: /clients/{clientId} ---
+    match /clients/{clientId} {
+      allow get: if isSignedIn() && isVerified() && isValidId(clientId)
+        && existing().ownerId == request.auth.uid;
+
+      allow list: if isSignedIn() && isVerified()
+        && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() && isVerified() && isValidId(clientId)
+        && isValidClient(incoming())
+        && incoming().keys().hasAll(['docsDueDate', 'documentsChecklist'])
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() && isVerified() && isValidId(clientId)
+        && isValidClient(incoming())
+        && existing().ownerId == request.auth.uid
+        && existing().status != 'archived'
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Edit full client profile & benefit details
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'fullName', 'phone', 'snils', 'region',
+            'childrenCount', 'children', 'benefitPercent', 'monthlyAmount',
+            'status', 'firstBenefitDate', 'renewalDate', 'notes',
+            'docsDueDate', 'documentsChecklist', 'updatedAt'
+          ]) ||
+          // Action: Update documents checklist or submission date
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'docsDueDate', 'documentsChecklist', 'updatedAt'
+          ]) ||
+          // Action: Quick status update / archive
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        );
+
+      allow delete: if isSignedIn() && isVerified() && isValidId(clientId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    // --- Collection: /payouts/{payoutId} ---
+    match /payouts/{payoutId} {
+      allow get: if isSignedIn() && isVerified() && isValidId(payoutId)
+        && existing().ownerId == request.auth.uid;
+
+      allow list: if isSignedIn() && isVerified()
+        && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() && isVerified() && isValidId(payoutId)
+        && isValidPayout(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/clients/$(incoming().clientId))
+        && getAfter(/databases/$(database)/documents/clients/$(incoming().clientId)).data.ownerId == request.auth.uid;
+
+      allow update: if isSignedIn() && isVerified() && isValidId(payoutId)
+        && isValidPayout(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().clientId == existing().clientId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/clients/$(existing().clientId))
+        && get(/databases/$(database)/documents/clients/$(existing().clientId)).data.ownerId == request.auth.uid
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'clientName', 'amount', 'payoutDate', 'periodMonth',
+          'benefitPercent', 'childrenCovered', 'comment', 'updatedAt'
+        ]);
+
+      allow delete: if isSignedIn() && isVerified() && isValidId(payoutId)
+        && existing().ownerId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "entities": {
+    "ClientRecord": {
+      "title": "ClientRecord",
+      "description": "Клиент специалиста по единому пособию с данными о детях, сумме и сроках назначения.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID владельца (специалиста CRM)",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "ФИО клиента",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "Контактный телефон клиента",
+          "maxLength": 32
+        },
+        "snils": {
+          "type": "string",
+          "description": "СНИЛС клиента",
+          "maxLength": 20
+        },
+        "region": {
+          "type": "string",
+          "description": "Регион или город проживания",
+          "maxLength": 80
+        },
+        "childrenCount": {
+          "type": "integer",
+          "description": "Общее количество детей у клиента"
+        },
+        "children": {
+          "type": "array",
+          "description": "Список детей (имя и дата рождения, до 15 записей)"
+        },
+        "benefitPercent": {
+          "type": "integer",
+          "description": "Размер единого пособия в % от ПМ",
+          "enum": [0, 50, 75, 100]
+        },
+        "monthlyAmount": {
+          "type": "number",
+          "description": "Текущая ежемесячная сумма пособия (₽)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Статус дела по единому пособию",
+          "enum": ["active", "pending", "renewal", "denied", "archived"]
+        },
+        "firstBenefitDate": {
+          "type": "string",
+          "description": "Дата первого назначения или получения (YYYY-MM-DD)",
+          "maxLength": 20
+        },
+        "renewalDate": {
+          "type": "string",
+          "description": "Дата окончания срока и продления пособия (YYYY-MM-DD)",
+          "maxLength": 20
+        },
+        "notes": {
+          "type": "string",
+          "description": "Заметки по клиенту и документам",
+          "maxLength": 1000
+        },
+        "docsDueDate": {
+          "type": "string",
+          "description": "Дата, когда нужно подавать документы (YYYY-MM-DD)",
+          "maxLength": 20
+        },
+        "documentsChecklist": {
+          "type": "object",
+          "description": "Чек-лист подачи документов: Заявление, Паспорт, Справка о доходах"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Серверное время создания карточки"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Серверное время последнего обновления"
+        }
+      },
+      "required": [
+        "ownerId",
+        "fullName",
+        "phone",
+        "snils",
+        "region",
+        "childrenCount",
+        "children",
+        "benefitPercent",
+        "monthlyAmount",
+        "status",
+        "firstBenefitDate",
+        "renewalDate",
+        "notes",
+        "docsDueDate",
+        "documentsChecklist",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PayoutRecord": {
+      "title": "PayoutRecord",
+      "description": "Запись о полученной выплате единого пособия по клиенту.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID владельца (специалиста CRM)",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Идентификатор карточки клиента",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientName": {
+          "type": "string",
+          "description": "ФИО клиента на момент записи выплаты",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "amount": {
+          "type": "number",
+          "description": "Сумма полученного пособия (₽)"
+        },
+        "payoutDate": {
+          "type": "string",
+          "description": "Дата получения выплаты (YYYY-MM-DD)",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "periodMonth": {
+          "type": "string",
+          "description": "Расчетный месяц пособия (YYYY-MM)",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "benefitPercent": {
+          "type": "integer",
+          "description": "Процент от прожиточного минимума",
+          "enum": [50, 75, 100]
+        },
+        "childrenCovered": {
+          "type": "integer",
+          "description": "Количество детей в выплате"
+        },
+        "comment": {
+          "type": "string",
+          "description": "Комментарий к выплате",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Серверное время создания записи"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Серверное время обновления записи"
+        }
+      },
+      "required": [
+        "ownerId",
+        "clientId",
+        "clientName",
+        "amount",
+        "payoutDate",
+        "periodMonth",
+        "benefitPercent",
+        "childrenCovered",
+        "comment",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": {
+        "$ref": "#/entities/ClientRecord"
+      },
+      "description": "Клиенты по единому пособию, изолированные по ownerId специалиста"
+    },
+    "/payouts/{payoutId}": {
+      "schema": {
+        "$ref": "#/entities/PayoutRecord"
+      },
+      "description": "История полученных выплат единого пособия, привязанная к клиенту и владельцу"
+    }
+  }
+}
